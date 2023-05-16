@@ -36,7 +36,7 @@ CREATE TABLE members (
     phone VARCHAR(20),
     adress VARCHAR(200),
     created_at DATETIME,
-    updated_at DATETIME,
+    updated_at DATETIME
 );
 
 CREATE TABLE recipients (
@@ -76,7 +76,7 @@ CREATE TABLE announcments (
 CREATE TABLE member_connections (
     member_id INT PRIMARY KEY,
     current_connection DATETIME,
-    member_connections_history JSON,
+    member_connections_history TEXT,
     created_at DATETIME,
     updated_at DATETIME,
     FOREIGN KEY (member_id) REFERENCES members(id)
@@ -85,7 +85,7 @@ CREATE TABLE member_connections (
 CREATE TABLE member_types (
     member_id INT PRIMARY KEY,
     current_member_type DATETIME,
-    member_types_history JSON,
+    member_types_history TEXT,
     created_at DATETIME,
     updated_at DATETIME,
     FOREIGN KEY (member_id) REFERENCES members(id)
