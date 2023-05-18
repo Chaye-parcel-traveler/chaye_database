@@ -3,26 +3,26 @@
 *
 *   01 members
 *   02 recipients
-*   03 ask_for_collaboration
+*   03 cooperation
 *   04 announcments
 *   05 members_connections
 *   06 members_types
-*   07 colis
-*   08 confirm_catch_colis
+*   07 packages
+*   08 confirmation_receipt_package
 *   09 claims_alert
 *   10 claims_details
 *   11 claims_status
-*   12 bank_account
-*   13 rib_bank
+*   12 bank_accounts
+*   13 bank_informations
 *   14 wallet_btc
 *   15 reserved_payment
 *   16 payment
-*   17 avion
-*   18 trajet
+*   17 means_transport
+*   18 journeys
 *   19 position
 *   20 tchat_discussions
 *   21 tchat_messages
-*   22 commentary_rating
+*   22 commentaries_ratings
 **/
 
 CREATE DATABASE IF NOT EXISTS chaye;
@@ -164,14 +164,14 @@ CREATE TABLE bank_informations (
     id INT PRIMARY KEY,
     bank_account_id INT,
     informations VARCHAR(255),
-    FOREIGN KEY (bank_account_id) REFERENCES bank_account(id)
+    FOREIGN KEY (bank_account_id) REFERENCES bank_accounts(id)
 );
 
 CREATE TABLE wallets_btc (
     id INT PRIMARY KEY,
     bank_account_id INT,
     wallet VARCHAR(255),
-    FOREIGN KEY (bank_account_id) REFERENCES bank_account(id)
+    FOREIGN KEY (bank_account_id) REFERENCES bank_accounts(id)
 );
 
 
@@ -182,7 +182,7 @@ CREATE TABLE reserved_payments (
     to_reserved_account_id INT,
     taking_reserved_at DATETIME,
     FOREIGN KEY (cooperation_key) REFERENCES cooperation(cooperation_keygen),
-    FOREIGN KEY (from_bank_account_id) REFERENCES bank_account(id)
+    FOREIGN KEY (from_bank_account_id) REFERENCES bank_accounts(id)
 );
 
 CREATE TABLE payments (
@@ -192,8 +192,8 @@ CREATE TABLE payments (
     state ENUM('waiting', 'sold'),
     created_at DATETIME,
     sold_at DATETIME,
-    FOREIGN KEY (from_reserved_account_id) REFERENCES reserved_payments(id)
-    FOREIGN KEY (to_bank_account_id) REFERENCES bank_account(id)
+    FOREIGN KEY (from_reserved_account_id) REFERENCES reserved_payments(id),
+    FOREIGN KEY (to_bank_account_id) REFERENCES bank_accounts(id)
 );
 
 /* TRAVEL & POSITION GPS */
@@ -227,7 +227,7 @@ CREATE TABLE positions (
     latitude FLOAT(10,6),
     longitude FLOAT(10,6),
     created_at DATETIME,
-    FOREIGN KEY (membres_id) REFERENCES membres(id)
+    FOREIGN KEY (membres_id) REFERENCES members(id)
 );
 
 /* MESSAGES TCHAT */
