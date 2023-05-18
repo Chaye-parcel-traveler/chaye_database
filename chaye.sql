@@ -11,16 +11,18 @@
 *   08 confirm_catch_colis
 *   09 claims_alert
 *   10 claims_details
-*   11 bank_account
-*   12 rib_bank
-*   13 wallet_btc
-*   14 reserved_payment
-*   15 payment
-*   16 avion
-*   17 trajet
-*   18 position
-*   19 tchat_discussions
-*   20 tchat_messages
+*   11 claims_status
+*   12 bank_account
+*   13 rib_bank
+*   14 wallet_btc
+*   15 reserved_payment
+*   16 payment
+*   17 avion
+*   18 trajet
+*   19 position
+*   20 tchat_discussions
+*   21 tchat_messages
+*   22 commentary_rating
 **/
 
 CREATE DATABASE IF NOT EXISTS chaye;
@@ -56,14 +58,14 @@ CREATE TABLE cooperation (
     cooperation_keygen VARCHAR(100),
     cooperation_applicant INT,
     cooperation_carrier INT,
-    cooperation_state VARCHAR(10),
+    cooperation_state ENUM('rejected', 'accepted', 'waiting'),
     created_at DATETIME,
     cooperation_state_response_at DATETIME,
     FOREIGN KEY (cooperation_applicant) REFERENCES members(id),
     FOREIGN KEY (cooperation_carrier) REFERENCES members(id)
 );
 
-CREATE TABLE announcments (
+CREATE TABLE announcements (
     id INT PRIMARY KEY,
     announcment_type ENUM('enable', 'filled'),
     member_id INT,
@@ -84,8 +86,7 @@ CREATE TABLE member_connections (
 
 CREATE TABLE member_types (
     member_id INT PRIMARY KEY,
-    current_member_type DATETIME,
-    member_types_history TEXT,
+    current_member_type ENUM('applicant', 'carrier', 'recipient'),
     created_at DATETIME,
     updated_at DATETIME,
     FOREIGN KEY (member_id) REFERENCES members(id)
@@ -137,24 +138,36 @@ CREATE TABLE claims_details (
     FOREIGN KEY (membre_id) REFERENCES members(id)
 );
 
+CREATE TABLE claims_status (
+    id INT PRIMARY KEY,
+    applicant_claim_id INT,
+    carrier_claim_id INT,
+    state ENUM('solved', 'urgent'),
+    create_date DATETIME,
+    updated_at DATETIME,
+    FOREIGN KEY (applicant_claim_id) REFERENCES claims_alert(id),
+    FOREIGN KEY (carrier_claim_id) REFERENCES claims_alert(id)
+);
+
 /* PAYMENT */
 
-CREATE TABLE bank_account (
+CREATE TABLE bank_accounts (
     id INT PRIMARY KEY,
     membre_id INT,
     account_type ENUM('crypto', 'fudiciary'),
     create_date DATETIME,
+    updated_at DATETIME,
     FOREIGN KEY (membre_id) REFERENCES membres(id)
 );
 
-CREATE TABLE rib_bank (
+CREATE TABLE bank_informations (
     id INT PRIMARY KEY,
     bank_account_id INT,
-    rib VARCHAR(255),
+    informations VARCHAR(255),
     FOREIGN KEY (bank_account_id) REFERENCES bank_account(id)
 );
 
-CREATE TABLE wallet_btc (
+CREATE TABLE wallets_btc (
     id INT PRIMARY KEY,
     bank_account_id INT,
     wallet VARCHAR(255),
@@ -162,9 +175,9 @@ CREATE TABLE wallet_btc (
 );
 
 
-CREATE TABLE reserved_payment (
+CREATE TABLE reserved_payments (
     id INT PRIMARY KEY,
-    collaboration_key INT,
+    cooperation_key INT,
     from_bank_account_id INT,
     to_reserved_account_id INT,
     taking_reserved_at DATETIME,
@@ -172,38 +185,43 @@ CREATE TABLE reserved_payment (
     FOREIGN KEY (from_bank_account_id) REFERENCES bank_account(id)
 );
 
-CREATE TABLE payment (
+CREATE TABLE payments (
     id INT PRIMARY KEY,
     from_reserved_account_id INT,
     to_bank_account_id INT,
     state ENUM('waiting', 'sold'),
     created_at DATETIME,
     sold_at DATETIME,
+    FOREIGN KEY (from_reserved_account_id) REFERENCES reserved_payments(id)
     FOREIGN KEY (to_bank_account_id) REFERENCES bank_account(id)
 );
 
 /* TRAVEL & POSITION GPS */
 
-CREATE TABLE plane (
+CREATE TABLE means_transport (
     id INT PRIMARY KEY,
+    carrier_id INT,
     company VARCHAR(50),
     travel_code VARCHAR(10),
-    status ENUM('en_vol', 'atterri'),
+    transport ENUM('boat', 'plane', 'bus', 'car'),
+    status ENUM('waiting', 'on the way', 'landed'),
     position_gps VARCHAR(100),
-    created_at DATETIME
+    created_at DATETIME,
+    FOREIGN KEY (carrier_id) REFERENCES members(id)
 );
 
-CREATE TABLE trajet (
+CREATE TABLE journeys (
     id INT PRIMARY KEY,
     carrier_id INT,
     package_id INT,
+    created_at DATETIME,
     leaving_at DATETIME,
     arrival_at DATETIME,
     FOREIGN KEY (carrier_id) REFERENCES members(id),
     FOREIGN KEY (package_id) REFERENCES packages(id)
 );
 
-CREATE TABLE position (
+CREATE TABLE positions (
     id INT PRIMARY KEY,
     membres_id INT,
     latitude FLOAT(10,6),
@@ -232,4 +250,17 @@ CREATE TABLE tchat_messages (
     updated_at DATETIME,
     FOREIGN KEY (discussion_id) REFERENCES tchat_discussions(id),
     FOREIGN KEY (member_id) REFERENCES members(id)
+);
+
+/* COMMENTS & RATING */
+
+CREATE TABLE commentaries_ratings (
+    id INT PRIMARY KEY,
+    cooperation_key VARCHAR(100),
+    member_id INT,
+    member_cooperation_status ENUM('sender', 'carrier', 'recipient'),
+    rating_stars INT,
+    content TEXT,
+    FOREIGN KEY (member_id) REFERENCES members(id),
+    FOREIGN KEY (cooperation_key) REFERENCES cooperation(cooperation_keygen)
 );
