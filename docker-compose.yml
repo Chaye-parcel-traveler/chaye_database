@@ -1,11 +1,47 @@
-version: "3"
+name: chaye-database
+
 services:
   db:
-    image: mariadb
-    restart: always
+    image: mariadb:11
+    container_name: chaye_db
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: chayepwd
-    volumes:
-      - ./data:/var/lib/mysql
+      MARIADB_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MYSQL_DB_NAME:-chayedb}
+      MARIADB_USER: ${MYSQL_USER:-chayeuser}
+      MARIADB_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD}
     ports:
-      - 3306:3306
+      - "${MYSQL_HOST_PORT:-3307}:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    networks: [chaye-database]
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    profiles: [tools]
+    container_name: chaye_pma
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: ${MYSQL_USER:-chayeuser}
+      PMA_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD}
+    ports:
+      - "${PHPMYADMIN_HOST_PORT:-8084}:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [chaye-database]
+
+volumes:
+  mariadb-data:
+
+networks:
+  chaye-database:
+    driver: bridge
