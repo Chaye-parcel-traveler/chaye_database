@@ -1,0 +1,4 @@
+* @Chaye-parcel-traveler/chaye-maintainers
+/.github/workflows/required-reviewers.yml @Chaye-parcel-traveler/chaye-maintainers
+/.github/workflows/security*.yml @Chaye-parcel-traveler/chaye-maintainers
+/.github/CODEOWNERS @Chaye-parcel-traveler/chaye-maintainers
