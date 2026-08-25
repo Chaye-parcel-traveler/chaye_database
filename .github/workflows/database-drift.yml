@@ -1,0 +1,48 @@
+name: API database drift
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 5 * * 1'
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.3
+      - name: Read the API without an administrator token
+        id: source
+        continue-on-error: true
+        run: git clone --depth=1 https://github.com/Chaye-parcel-traveler/chaye_API.git "$RUNNER_TEMP/chaye_API"
+      - name: Report an inaccessible source
+        if: steps.source.outcome != 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          existing="$(gh issue list --label database-drift --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$existing" ]; then
+            gh issue create --title 'Database drift check cannot read chaye_API' --label database-drift --body 'The API source is not publicly readable. Manual remediation is required; no administrator token will be stored in Actions.'
+          fi
+          exit 1
+      - name: Rebuild the source manifest
+        if: steps.source.outcome == 'success'
+        run: node scripts/sync-api-manifest.mjs "$RUNNER_TEMP/chaye_API" "$(git -C "$RUNNER_TEMP/chaye_API" rev-parse HEAD)"
+      - name: Open a deterministic synchronization PR
+        if: steps.source.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- generated/api-manifest.json; then exit 0; fi
+          branch="automation/database-drift-$(date -u +%Y%m%d)-$(git -C "$RUNNER_TEMP/chaye_API" rev-parse --short HEAD)"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git switch -c "$branch"
+          git add generated/api-manifest.json
+          git commit -m 'chore: update API database manifest'
+          git push origin "$branch"
+          gh pr create --base "${{ github.event.repository.default_branch }}" --head "$branch" --title 'chore: synchronize API database manifest' --body 'Automated drift manifest update. Review required; no auto-merge.'
